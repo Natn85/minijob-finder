@@ -3,7 +3,7 @@
 Serves the dashboard and a small JSON API:
 
     GET  /api/jobs                   stored jobs (jobs.json)
-    POST /api/refresh                fetch listings from the job board (fast)
+    POST /api/refresh                fetch listings for {location, radius} (fast)
     POST /api/jobs/<refnr>/email     generate the application email for one job
     POST /api/jobs/<refnr>/email/stream   same, streamed live as NDJSON
     POST /api/jobs/<refnr>/status    set status: new | applied | hidden
@@ -66,10 +66,13 @@ def api_refresh():
     # blocking=False: don't wait if the lock is taken, just report it.
     if not _refresh_lock.acquire(blocking=False):
         return jsonify({"error": "Eine Aktualisierung läuft bereits."}), 409
+    data = request.get_json(silent=True) or {}
     try:
-        return jsonify(minijob.refresh_jobs(verbose=True))
+        return jsonify(minijob.refresh_jobs(data.get("location"), data.get("radius"), verbose=True))
     except requests.RequestException as exc:
         return jsonify({"error": f"Jobbörse nicht erreichbar: {exc}"}), 502
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
     except Exception as exc:  # noqa: BLE001 - surface error to the UI
         return jsonify({"error": str(exc)}), 500
     finally:

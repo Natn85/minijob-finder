@@ -37,7 +37,22 @@ import store
 _generation_lock = threading.Lock()
 
 
-def refresh_jobs(verbose: bool = True) -> dict[str, Any]:
+def _search_choice(location: Any, radius: Any) -> tuple[str, str]:
+    """Validated location and radius; ``None`` keeps the last choice.
+
+    Raises ``ValueError`` (HTTP 400) for an empty location or unknown radius.
+    """
+    last = store.load_state()["query"]
+    location = str(last["wo"] if location is None else location).strip()
+    radius = str(last["umkreis"] if radius is None else radius)
+    if not location:
+        raise ValueError("Bitte gib einen Ort oder eine PLZ ein.")
+    if radius not in jobboard.RADIUS_CHOICES:
+        raise ValueError(f"Ungültiger Umkreis: {radius}")
+    return location, radius
+
+
+def refresh_jobs(location: Any = None, radius: Any = None, verbose: bool = True) -> dict[str, Any]:
     """Fetch the current listings and merge them into jobs.json.
 
     Known jobs keep their status and email, and only new listings trigger a
@@ -54,8 +69,9 @@ def refresh_jobs(verbose: bool = True) -> dict[str, Any]:
             # flush=True prints immediately instead of when the buffer is full.
             print(msg, flush=True)
 
-    log(f"Suche Minijobs in {jobboard.SEARCH_PARAMS['wo']} …")
-    found = jobboard.search()
+    location, radius = _search_choice(location, radius)
+    log(f"Suche Minijobs in {location} ({radius} km) …")
+    found = jobboard.search(location, radius)
     listings = [job for job in found if not jobboard.is_excluded(job["title"])]
     log(f"{len(found)} Stellenangebote gefunden, {len(found) - len(listings)} aussortiert.")
 
@@ -79,7 +95,7 @@ def refresh_jobs(verbose: bool = True) -> dict[str, Any]:
         kept = [job for job in state["jobs"] if job["refnr"] in on_board or job["status"] == "applied"]
         state["jobs"] = [job for job in new_jobs if job["refnr"] not in existing] + kept
         state["generated_at"] = time.strftime("%Y-%m-%d %H:%M:%S")
-        state["query"] = {**jobboard.SEARCH_PARAMS, "max_pages": jobboard.MAX_PAGES}
+        state["query"] = {**jobboard.SEARCH_PARAMS, "wo": location, "umkreis": radius, "max_pages": jobboard.MAX_PAGES}
     log(f"Gespeichert in {store.OUTPUT_FILE.name} ({len(state['jobs'])} Jobs).")
     return state
 

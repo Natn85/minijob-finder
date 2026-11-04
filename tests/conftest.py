@@ -65,11 +65,13 @@ def board(monkeypatch):
         listings = []
         details = {}
         detail_calls = []
+        search_params = []
 
     b = Board()
 
     def fake_get(url, **kwargs):
         if url == jobboard.SEARCH_URL:
+            b.search_params.append(kwargs["params"])
             return _FakeResponse({"ergebnisliste": list(b.listings)})
         raise requests.ConnectionError(f"unexpected request in test: {url}")
 

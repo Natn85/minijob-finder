@@ -35,14 +35,17 @@ API_HEADERS = {"X-API-Key": "jobboerse-jobsuche"}  # public key of the job board
 REQUEST_TIMEOUT = 30  # seconds; without a timeout a hanging server blocks forever
 
 # Sent as the query string: ?wo=Würzburg&arbeitszeit=mj&umkreis=25&...
+# "wo" and "umkreis" are the user's choice and are added in ``search()``.
 SEARCH_PARAMS = {
-    "wo": "Würzburg",
     "arbeitszeit": "mj",   # mj = Minijob
-    "umkreis": "25",       # radius in km
     "angebotsart": "1",    # 1 = regular job offers
     "size": "50",          # results per page
 }
-MAX_PAGES = 2              # at most MAX_PAGES * size listings per refresh
+MAX_PAGES = 4              # at most MAX_PAGES * size listings per refresh
+
+DEFAULT_LOCATION = "Würzburg"
+DEFAULT_RADIUS = "25"      # in km
+RADIUS_CHOICES = ("5", "10", "25", "50", "100")
 
 # Titles containing one of these need a professional qualification and are
 # always skipped. Matching is case-insensitive and on substrings, so
@@ -78,8 +81,8 @@ EMAIL_RE = re.compile(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+")
 # --- Public functions -------------------------------------------------------
 
 
-def search() -> list[dict[str, Any]]:
-    """Return the listings of up to MAX_PAGES result pages, de-duplicated.
+def search(location: str, radius: str) -> list[dict[str, Any]]:
+    """Return the listings around a city or ZIP, de-duplicated (up to MAX_PAGES pages).
 
     The API returns results in pages. We request page 1, 2, ... and stop when
     MAX_PAGES is reached or a page comes back with fewer than ``size`` entries,
@@ -94,7 +97,7 @@ def search() -> list[dict[str, Any]]:
                 SEARCH_URL,
                 headers=API_HEADERS,
                 # ``{**a, "k": v}`` copies dict ``a`` and adds or overrides one key.
-                params={**SEARCH_PARAMS, "page": str(page)},
+                params={**SEARCH_PARAMS, "wo": location, "umkreis": radius, "page": str(page)},
                 timeout=REQUEST_TIMEOUT,
             )
             # Turns HTTP errors (403, 500, ...) into a Python exception.

@@ -32,7 +32,7 @@ from pathlib import Path
 from typing import Any
 
 from emails import build_subject, clean_title
-from jobboard import mentions_minijob
+from jobboard import DEFAULT_LOCATION, DEFAULT_RADIUS, mentions_minijob
 
 # ``Path(__file__)`` is this file; ``with_name`` swaps the file name, so the
 # JSON files always sit next to the code, no matter where you start it from.
@@ -76,7 +76,8 @@ def load_state() -> dict[str, Any]:
     jobs = [normalize(j) for j in data.get("jobs", []) if isinstance(j, dict) and j.get("refnr")]
     return {
         "generated_at": data.get("generated_at"),
-        "query": data.get("query") or {},
+        # The last search; "wo" and "umkreis" are also the remembered choice.
+        "query": {"wo": DEFAULT_LOCATION, "umkreis": DEFAULT_RADIUS, **(data.get("query") or {})},
         "count": len(jobs),
         "jobs": jobs,
     }

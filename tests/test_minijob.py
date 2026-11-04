@@ -243,11 +243,37 @@ def test_api_profile_roundtrip_and_validation(client):
 
 
 def test_api_refresh_reports_board_outage(client, monkeypatch):
-    def down():
+    def down(location, radius):
         raise requests.ConnectionError("down")
     monkeypatch.setattr(jobboard, "search", down)
     resp = client.post("/api/refresh")
     assert resp.status_code == 502 and "Jobbörse" in resp.get_json()["error"]
+
+
+def test_api_refresh_sends_chosen_location_and_radius(client, board):
+    board.listings = [raw_listing("A", "Küchenhilfe")]
+    state = client.post("/api/refresh", json={"location": " 10115 ", "radius": "50"}).get_json()
+    assert (board.search_params[0]["wo"], board.search_params[0]["umkreis"]) == ("10115", "50")
+    assert (state["query"]["wo"], state["query"]["umkreis"]) == ("10115", "50")
+
+
+def test_search_choice_is_remembered_and_defaults_to_wuerzburg(client, board):
+    query = client.get("/api/jobs").get_json()["query"]
+    assert (query["wo"], query["umkreis"]) == ("Würzburg", "25")
+
+    client.post("/api/refresh", json={"location": "Berlin", "radius": "100"})
+    query = client.get("/api/jobs").get_json()["query"]  # read back from jobs.json
+    assert (query["wo"], query["umkreis"]) == ("Berlin", "100")
+
+    board.search_params.clear()
+    client.post("/api/refresh")                          # no choice sent: keeps the last one
+    assert (board.search_params[0]["wo"], board.search_params[0]["umkreis"]) == ("Berlin", "100")
+
+
+@pytest.mark.parametrize("body", [{"location": "   ", "radius": "25"}, {"location": "Berlin", "radius": "7"}])
+def test_api_refresh_rejects_invalid_choice_without_searching(client, board, body):
+    assert client.post("/api/refresh", json=body).status_code == 400
+    assert board.search_params == []
 
 
 def test_display_title_is_clean(isolated_state):

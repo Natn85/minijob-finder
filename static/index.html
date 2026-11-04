@@ -69,6 +69,11 @@
     .icon-btn { width: 44px; height: 44px; display: grid; place-items: center; border: 1px solid var(--header-border); border-radius: 10px; background: transparent; color: var(--header-text); }
     .refresh { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 18px; border: none; border-radius: 10px; background: var(--refresh-bg); color: var(--refresh-fg); font-size: 14px; font-weight: 600; }
     .refresh:disabled { opacity: .75; }
+    .search { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+    /* The header is dark in both themes, so the dropdown list has to be dark too. */
+    .search input, .search select { font: inherit; font-size: 14px; min-height: 44px; padding: 0 12px; border: 1px solid var(--header-border); border-radius: 10px; background: var(--header); color: var(--header-text); color-scheme: dark; }
+    .search input { width: 170px; }
+    .search input::placeholder { color: var(--header-muted); }
     .icon-btn, .refresh, .tab, .row, .btn { transition: border-color .15s ease, background-color .15s ease, filter .15s ease; }
     .icon-btn:hover { background: var(--header-border); }
     .refresh:hover:not(:disabled) { filter: brightness(.92); }
@@ -184,10 +189,10 @@
     footer .wrap { padding-block: 16px; }
 
     /* Wide screens: header and job details stay in view while the list scrolls.
-       85px is the header's height when it fits on one line. */
+       --header-h is kept up to date by a script, as the header can wrap. */
     @media (min-width: 1000px) {
       header { position: sticky; top: 0; z-index: 20; }
-      .detail { position: sticky; top: 105px; max-height: calc(100vh - 125px); overflow-y: auto; }
+      .detail { position: sticky; top: calc(var(--header-h, 85px) + 20px); max-height: calc(100vh - var(--header-h, 85px) - 40px); overflow-y: auto; }
     }
     @media (max-width: 560px) {
       .wrap { padding-inline: 16px; }
@@ -203,13 +208,23 @@
         <img class="logo" src="/static/favicon.svg" alt="" width="40" height="40" />
         <div>
           <h1>Minijob Finder</h1>
-          <div class="meta mono" id="meta">Würzburg</div>
+          <div class="meta mono" id="meta">&nbsp;</div>
         </div>
       </a>
       <div class="head-actions">
         <div class="ollama" id="ollama"><span class="dot"></span><span id="ollamaText">Prüfe Ollama …</span></div>
         <button type="button" class="icon-btn" id="themeBtn"></button>
-        <button type="button" class="refresh" id="refreshBtn"></button>
+        <form class="search" id="searchForm" novalidate>
+          <input id="searchLocation" maxlength="100" placeholder="Ort oder PLZ" aria-label="Ort oder PLZ" value="Würzburg" />
+          <select id="searchRadius" aria-label="Umkreis">
+            <option value="5">5 km</option>
+            <option value="10">10 km</option>
+            <option value="25" selected>25 km</option>
+            <option value="50">50 km</option>
+            <option value="100">100 km</option>
+          </select>
+          <button type="submit" class="refresh" id="refreshBtn"></button>
+        </form>
       </div>
     </div>
   </header>
@@ -300,7 +315,8 @@
 
     const $ = (id) => document.getElementById(id);
     const els = { meta: $("meta"), ollama: $("ollama"), ollamaText: $("ollamaText"), themeBtn: $("themeBtn"),
-                  refreshBtn: $("refreshBtn"), tabs: $("tabs"), onlyMail: $("onlyMail"), onlyMailLabel: $("onlyMailLabel"),
+                  refreshBtn: $("refreshBtn"), searchForm: $("searchForm"), searchLocation: $("searchLocation"), searchRadius: $("searchRadius"),
+                  tabs: $("tabs"), onlyMail: $("onlyMail"), onlyMailLabel: $("onlyMailLabel"),
                   list: $("list"), detail: $("detail"), layout: $("layout"), live: $("live"),
                   profileForm: $("profileForm"), profileSave: $("profileSave"), profileMsg: $("profileMsg") };
 
@@ -351,14 +367,14 @@
 
     // --- header --------------------------------------------------------------
     function renderHeader() {
-      const km = (state.query && state.query.umkreis) || "25";
+      const { wo, umkreis } = state.query;
       let stand = "noch nie aktualisiert";
       if (state.generated_at) {
         const d = new Date(state.generated_at.replace(" ", "T"));
         stand = isNaN(d) ? state.generated_at
           : "Stand " + d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" }) + " " + d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
       }
-      els.meta.textContent = `Würzburg · Umkreis ${km} km · ${stand}`;
+      if (wo) els.meta.textContent = `${wo} · Umkreis ${umkreis} km · ${stand}`;  // not loaded yet: stays empty
       els.refreshBtn.disabled = ui.loading;
       els.refreshBtn.innerHTML = ICON.refresh(ui.loading ? "spin" : "") + (ui.loading ? "Aktualisiere …" : "Jobs aktualisieren");
 
@@ -610,12 +626,26 @@
       catch { toast("Kopieren nicht möglich"); }
     }
 
+    // Put the stored search into the form. Only called after loading, so it
+    // never overwrites what is being typed.
+    function fillSearch() {
+      els.searchLocation.value = state.query.wo;
+      els.searchRadius.value = state.query.umkreis;
+    }
+
     async function refreshJobs() {
       if (ui.loading) return;
+      const location = els.searchLocation.value.trim();
+      if (!location) {
+        toast("Bitte gib einen Ort oder eine PLZ ein.");
+        els.searchLocation.focus();
+        return;
+      }
       ui.loading = true; ui.listError = null;
       render();
       try {
-        state = await api("/api/refresh", { method: "POST" });
+        state = await post("/api/refresh", { location, radius: els.searchRadius.value });
+        fillSearch();
         const n = state.jobs.filter((j) => j.status === "new").length;
         announce(`${n} offene Stellen geladen.`);
       } catch (e) {
@@ -678,7 +708,12 @@
     // Event delegation: one listener per container checks which button inside
     // it was clicked (via data-* attributes), because the buttons themselves
     // are re-created on every render.
-    els.refreshBtn.addEventListener("click", refreshJobs);
+    els.searchForm.addEventListener("submit", (e) => { e.preventDefault(); refreshJobs(); });
+    // The sticky job details sit below the header, whose height depends on wrapping.
+    const headerEl = document.querySelector("header");
+    new ResizeObserver(() => {
+      document.documentElement.style.setProperty("--header-h", headerEl.offsetHeight + "px");
+    }).observe(headerEl);
     // The title returns to the start view without a real reload, which would
     // cancel an email that is still being generated. Ctrl/middle click still
     // follow the link and open a new tab.
@@ -717,7 +752,7 @@
       renderTheme();
       render();
       loadProfile();
-      try { state = await api("/api/jobs"); }
+      try { state = await api("/api/jobs"); fillSearch(); }
       catch (e) { ui.listError = "Konnte Jobs nicht laden: " + e.message; }
       render();
       try { ollama = await api("/api/ollama"); } catch { ollama = { up: false, model: "?" }; }
