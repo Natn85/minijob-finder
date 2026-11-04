@@ -1,0 +1,11 @@
+.env
+jobs.json
+jobs.json.tmp
+jobs.json.bak
+__pycache__/
+*.pyc
+.venv/
+venv/
+profile.json
+profile.json.tmp
+.pytest_cache/

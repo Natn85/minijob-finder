@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="de" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Minijob Finder · Würzburg</title>
+  <meta name="description" content="Minijobs in Würzburg finden und Bewerbungen lokal schreiben lassen." />
+  <meta name="theme-color" content="#0B0D10" />
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml" />
+  <script>
+    // Apply the saved theme before first paint (no flash of the wrong theme).
+    try { const t = localStorage.getItem("mj-theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch {}
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" />
+  <style>
+    :root, [data-theme="dark"] {
+      --bg: #0F1115; --header: #0B0D10; --header-text: #F3F4F6; --header-muted: #9AA3B2; --header-border: #2A2F3A;
+      --surface: #171A21; --surface-2: #1C2029; --border: #2A2F3A; --border-strong: #3A4150;
+      --text: #E8EAEE; --text-soft: #C9CED6; --muted: #A3ABB8; --subtle: #8E97A6;
+      --sel-bg: #2A1D16; --sel-border: #F97316; --mail-bg: #3A2213; --mail-fg: #FDBA74;
+      --info-bg: #1E2547; --info-fg: #C7D2FE; --warn-bg: #3A2E10; --warn-fg: #FCD34D;
+      --neutral-bg: #262B35; --neutral-fg: #C9CED6; --danger: #FCA5A5;
+      --tab-on-bg: #E8EAEE; --tab-on-fg: #111418; --tab-on-count: #C9CED6; --tab-on-count-fg: #111418;
+      --skel: #2A2F3A; --track: #262B35; --refresh-bg: #E8EAEE; --refresh-fg: #111418;
+      --accent: #C2410C; --accent-strong: #F97316;
+      color-scheme: dark;
+    }
+    [data-theme="light"] {
+      --bg: #F3F4F6; --header: #111418; --header-text: #FFFFFF; --header-muted: #B8C0CC; --header-border: #343B47;
+      --surface: #FFFFFF; --surface-2: #F8F9FA; --border: #E2E5E9; --border-strong: #C9CED6;
+      --text: #111418; --text-soft: #374151; --muted: #4B5563; --subtle: #5B6472;
+      --sel-bg: #FFF7F2; --sel-border: #C2410C; --mail-bg: #FFF1E8; --mail-fg: #9A3412;
+      --info-bg: #EEF2FF; --info-fg: #1E3A8A; --warn-bg: #FEF3C7; --warn-fg: #78350F;
+      --neutral-bg: #F0F2F5; --neutral-fg: #374151; --danger: #B91C1C;
+      --tab-on-bg: #111418; --tab-on-fg: #FFFFFF; --tab-on-count: #343B47; --tab-on-count-fg: #FFFFFF;
+      --skel: #E5E7EB; --track: #F0F2F5; --refresh-bg: #FFFFFF; --refresh-fg: #111418;
+      color-scheme: light;
+    }
+
+    * { box-sizing: border-box; }
+    [hidden] { display: none !important; }
+    @media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+    body {
+      margin: 0; min-height: 100vh; display: flex; flex-direction: column; background: var(--bg); color: var(--text);
+      font-family: "IBM Plex Sans", system-ui, sans-serif; font-size: 15px; line-height: 1.5;
+      transition: background-color .25s ease, color .25s ease;
+    }
+    .mono { font-family: "IBM Plex Mono", ui-monospace, monospace; }
+    button { font: inherit; color: inherit; cursor: pointer; }
+    button:disabled { cursor: not-allowed; }
+    :focus-visible { outline: 2px solid var(--accent-strong); outline-offset: 2px; }
+    .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+    .wrap { max-width: 1360px; margin: 0 auto; padding-inline: 32px; }
+
+    /* Header */
+    header { background: var(--header); color: var(--header-text); border-bottom: 1px solid var(--header-border); }
+    header .wrap { padding-block: 18px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px; }
+    .brand { display: flex; align-items: center; gap: 14px; color: inherit; text-decoration: none; border-radius: 10px; }
+    .logo { width: 40px; height: 40px; flex: none; transition: filter .15s ease; }
+    .brand:hover .logo { filter: brightness(1.15); }
+    h1 { margin: 0; font-size: 20px; font-weight: 600; letter-spacing: -0.01em; }
+    .meta { font-size: 12px; color: var(--header-muted); }
+    .head-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+    .ollama { display: flex; align-items: center; gap: 8px; border: 1px solid var(--header-border); border-radius: 999px; padding: 6px 14px; font-size: 13px; color: var(--header-muted); }
+    .ollama .dot { width: 8px; height: 8px; border-radius: 50%; background: #6B7280; }
+    .ollama.ok .dot { background: #4ADE80; }
+    .ollama.warn .dot { background: #FBBF24; }
+    .icon-btn { width: 44px; height: 44px; display: grid; place-items: center; border: 1px solid var(--header-border); border-radius: 10px; background: transparent; color: var(--header-text); }
+    .refresh { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 18px; border: none; border-radius: 10px; background: var(--refresh-bg); color: var(--refresh-fg); font-size: 14px; font-weight: 600; }
+    .refresh:disabled { opacity: .75; }
+    .icon-btn, .refresh, .tab, .row, .btn { transition: border-color .15s ease, background-color .15s ease, filter .15s ease; }
+    .icon-btn:hover { background: var(--header-border); }
+    .refresh:hover:not(:disabled) { filter: brightness(.92); }
+    .tab:hover { border-color: var(--border-strong); }
+
+    /* Toolbar */
+    main.wrap { flex: 1; width: 100%; padding-block: 28px 56px; display: flex; flex-direction: column; gap: 20px; }
+    .toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+    .tabs { display: flex; flex-wrap: wrap; gap: 8px; }
+    .tab { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 0 16px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); color: var(--text-soft); font-size: 14px; font-weight: 500; }
+    .tab .count { font-size: 12px; padding: 1px 8px; border-radius: 999px; background: var(--neutral-bg); color: var(--neutral-fg); font-variant-numeric: tabular-nums; }
+    .tab[aria-pressed="true"] { background: var(--tab-on-bg); color: var(--tab-on-fg); border-color: var(--tab-on-bg); }
+    .tab[aria-pressed="true"] .count { background: var(--tab-on-count); color: var(--tab-on-count-fg); }
+    .check { display: flex; align-items: center; gap: 10px; min-height: 44px; font-size: 14px; color: var(--muted); cursor: pointer; }
+    .check input { width: 18px; height: 18px; accent-color: var(--accent); }
+
+    /* Layout */
+    .layout { display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start; }
+    .list { flex: 1 1 360px; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+    .detail { flex: 999 1 560px; min-width: 0; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; display: flex; flex-direction: column; gap: 22px; transition: opacity .2s ease; }
+    .detail.dim { opacity: .5; }
+
+    .row { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; width: 100%; text-align: left; padding: 14px 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+    .row:hover { border-color: var(--border-strong); }
+    .row[aria-current="true"] { background: var(--sel-bg); border-color: var(--sel-border); }
+    .row-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+    .row-title { font-size: 15px; font-weight: 600; line-height: 1.35; overflow-wrap: anywhere; }
+    .row-company { font-size: 13px; color: var(--muted); }
+    .row-loc { font-size: 12px; color: var(--subtle); }
+    .chip { flex: none; display: inline-flex; align-items: center; gap: 6px; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 500; }
+    .chip.mail { background: var(--mail-bg); color: var(--mail-fg); }
+    .chip.info { background: var(--info-bg); color: var(--info-fg); }
+    .chip.neutral { background: var(--neutral-bg); color: var(--neutral-fg); }
+    .chip.warn { background: var(--warn-bg); color: var(--warn-fg); }
+    .row-chips { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+    .chip.warn[title] { cursor: help; }
+    .tab.separate { margin-left: 8px; }
+
+    /* Profile */
+    .profile { max-width: 720px; background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; display: flex; flex-direction: column; gap: 20px; }
+    .profile h2 { font-size: 22px; }
+    .profile .intro { margin: -10px 0 0; color: var(--muted); font-size: 14px; }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field label { font-size: 14px; font-weight: 600; }
+    .field .optional { color: var(--subtle); font-weight: 400; }
+    .field .hint { color: var(--subtle); font-size: 12px; }
+    .field input, .field textarea { font: inherit; font-size: 15px; color: var(--text); background: var(--surface-2); border: 1px solid var(--border-strong); border-radius: 10px; padding: 10px 12px; width: 100%; }
+    .field textarea { min-height: 100px; resize: vertical; }
+    .field input:focus, .field textarea:focus { border-color: var(--accent-strong); outline: none; }
+    .profile-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+    .profile-msg { font-size: 13px; color: var(--muted); }
+    .profile-msg.ok { color: var(--text-soft); }
+    .profile-msg.error { color: var(--danger); }
+    .empty { background: var(--surface); border: 1px dashed var(--border-strong); border-radius: 12px; padding: 32px 24px; text-align: center; color: var(--muted); }
+    .list-note { font-size: 13px; color: var(--muted); padding: 2px 4px; }
+
+    .skel-row { padding: 16px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); display: flex; flex-direction: column; gap: 8px; }
+    .skel { height: 12px; border-radius: 6px; background: var(--skel); }
+
+    /* Detail */
+    .d-head { display: flex; flex-direction: column; gap: 8px; }
+    .d-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: 12px; color: var(--subtle); }
+    h2 { margin: 0; font-size: 26px; line-height: 1.25; font-weight: 600; letter-spacing: -0.015em; text-wrap: balance; overflow-wrap: anywhere; }
+    .d-sub { font-size: 15px; color: var(--text-soft); }
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; }
+    .btn { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 0 16px; border-radius: 10px; border: 1px solid var(--border-strong); background: var(--surface); color: var(--text); font-size: 14px; font-weight: 500; text-decoration: none; }
+    .btn:hover { border-color: var(--subtle); }
+    .btn.primary { background: var(--accent); border-color: var(--accent); color: #FFFFFF; font-weight: 600; }
+    .btn.primary:hover { filter: brightness(1.08); }
+    .btn.ghost { border-color: transparent; background: transparent; color: var(--muted); }
+    .btn.small { min-height: 36px; padding: 0 12px; font-size: 13px; border-radius: 8px; }
+    .btn.big { min-height: 52px; padding: 0 26px; font-size: 16px; border-radius: 12px; }
+    .notice { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: 10px; background: var(--surface-2); color: var(--text-soft); font-size: 14px; }
+
+    .mailbox { border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+    .mail-head { position: relative; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 16px; background: var(--surface-2); border-bottom: 1px solid var(--border); }
+    .mail-head-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; font-size: 13px; color: var(--muted); }
+    .mail-head-text strong { color: var(--text); font-weight: 600; }
+    .mail-status { font-size: 12px; color: var(--subtle); }
+    .progress { position: absolute; left: 0; right: 0; bottom: -1px; height: 3px; overflow: hidden; background: var(--track); }
+    .progress > div { width: 40%; height: 100%; background: var(--accent-strong); border-radius: 3px; animation: mjBar 1.3s cubic-bezier(.65,0,.35,1) infinite; }
+    .mail-body { padding: 20px 22px; font-size: 15px; line-height: 1.65; white-space: pre-wrap; max-width: 72ch; overflow-wrap: anywhere; }
+    .mail-body.streaming { min-height: 300px; }
+    .mail-idle { padding: 52px 24px; display: flex; flex-direction: column; align-items: center; gap: 16px; text-align: center; color: var(--text-soft); }
+    .mail-idle p { margin: 0; max-width: 46ch; }
+    .thinking { padding: 22px; display: flex; flex-direction: column; gap: 14px; }
+    .thinking-label { display: flex; align-items: center; gap: 10px; color: var(--text-soft); font-size: 14px; }
+    .dots { display: flex; gap: 5px; }
+    .dots span { width: 7px; height: 7px; border-radius: 50%; background: var(--accent-strong); animation: mjPulse 1.2s ease-in-out infinite; }
+    .dots span:nth-child(2) { animation-delay: .2s; } .dots span:nth-child(3) { animation-delay: .4s; }
+    .skel-lines { display: flex; flex-direction: column; gap: 10px; }
+    .mail-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 16px; border-top: 1px solid var(--border); background: var(--surface-2); }
+    .mail-foot .note { font-size: 13px; color: var(--muted); }
+    .error { color: var(--danger); font-size: 14px; padding: 16px 22px; }
+    .caret { display: inline-block; width: 9px; height: 1.1em; margin-left: 2px; vertical-align: -0.15em; background: var(--accent-strong); animation: mjBlink 1s steps(1) infinite; }
+
+    .toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 10px 16px; border-radius: 10px; font-size: 14px; box-shadow: 0 6px 24px rgba(0,0,0,.25); z-index: 30; }
+
+    @keyframes mjSpin { to { transform: rotate(360deg); } }
+    @keyframes mjPulse { 0%, 100% { opacity: .45; } 50% { opacity: 1; } }
+    @keyframes mjIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+    @keyframes mjBar { 0% { transform: translateX(-110%); } 100% { transform: translateX(260%); } }
+    @keyframes mjBlink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
+    .spin { animation: mjSpin .8s linear infinite; }
+    .pulse { animation: mjPulse 1.3s ease-in-out infinite; }
+    .reveal { animation: mjIn .45s cubic-bezier(.22,1,.36,1) backwards; }
+    @media (prefers-reduced-motion: reduce) {
+      .spin, .pulse, .reveal, .dots span, .progress > div, .caret { animation: none; }
+      body, .detail { transition: none; }
+    }
+    /* Footer */
+    footer { border-top: 1px solid var(--border); font-size: 13px; color: var(--subtle); }
+    footer .wrap { padding-block: 16px; }
+
+    /* Wide screens: header and job details stay in view while the list scrolls.
+       85px is the header's height when it fits on one line. */
+    @media (min-width: 1000px) {
+      header { position: sticky; top: 0; z-index: 20; }
+      .detail { position: sticky; top: 105px; max-height: calc(100vh - 125px); overflow-y: auto; }
+    }
+    @media (max-width: 560px) {
+      .wrap { padding-inline: 16px; }
+      .detail { padding: 20px; }
+      h2 { font-size: 22px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <a class="brand" href="/" id="homeLink">
+        <img class="logo" src="/static/favicon.svg" alt="" width="40" height="40" />
+        <div>
+          <h1>Minijob Finder</h1>
+          <div class="meta mono" id="meta">Würzburg</div>
+        </div>
+      </a>
+      <div class="head-actions">
+        <div class="ollama" id="ollama"><span class="dot"></span><span id="ollamaText">Prüfe Ollama …</span></div>
+        <button type="button" class="icon-btn" id="themeBtn"></button>
+        <button type="button" class="refresh" id="refreshBtn"></button>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <div class="toolbar">
+      <div class="tabs" id="tabs" aria-label="Liste wählen"></div>
+      <label class="check" id="onlyMailLabel"><input type="checkbox" id="onlyMail" /> Nur Stellen mit E-Mail-Kontakt</label>
+    </div>
+    <div class="layout" id="layout">
+      <section class="list" id="list" aria-label="Stellenliste"></section>
+      <section class="detail" id="detail" aria-label="Stellendetails" aria-live="polite"></section>
+    </div>
+
+    <form class="profile" id="profileForm" hidden novalidate>
+      <h2>Dein Profil</h2>
+      <p class="intro">Daraus werden die Bewerbungs-E-Mails geschrieben. Die KI verwendet nur, was hier steht.</p>
+
+      <div class="field">
+        <label for="pf-name">Name</label>
+        <input id="pf-name" name="name" maxlength="1000" autocomplete="name" required />
+      </div>
+      <div class="field">
+        <label for="pf-city">Wohnort <span class="optional">(optional)</span></label>
+        <input id="pf-city" name="city" maxlength="1000" autocomplete="address-level2" />
+      </div>
+      <div class="field">
+        <label for="pf-occupation">Was machst du gerade? <span class="optional">(optional)</span></label>
+        <input id="pf-occupation" name="occupation" maxlength="1000" />
+        <span class="hint">Ergänzt den Satz „Derzeit mache ich …“, z. B. „eine Ausbildung zum Fachinformatiker“.</span>
+      </div>
+      <div class="field">
+        <label for="pf-skills">Kenntnisse <span class="optional">(optional)</span></label>
+        <input id="pf-skills" name="skills" maxlength="1000" />
+        <span class="hint">Werden nur erwähnt, wenn sie zur Stelle passen.</span>
+      </div>
+      <div class="field">
+        <label for="pf-availability">Verfügbarkeit <span class="optional">(optional)</span></label>
+        <input id="pf-availability" name="availability" maxlength="1000" />
+        <span class="hint">Ergänzt den Satz „Ich bin … verfügbar“, z. B. „abends und am Wochenende“.</span>
+      </div>
+      <div class="field">
+        <label for="pf-about">Über mich <span class="optional">(optional)</span></label>
+        <textarea id="pf-about" name="about" maxlength="1000"></textarea>
+        <span class="hint">Weitere Infos für die KI, z. B. Sprachen, Führerschein oder Erfahrung im Kundenkontakt.</span>
+      </div>
+
+      <div class="profile-actions">
+        <button type="submit" class="btn primary" id="profileSave">Profil speichern</button>
+        <span class="profile-msg" id="profileMsg" role="status"></span>
+      </div>
+    </form>
+  </main>
+  <footer>
+    <div class="wrap">Stellenangebote von der Bundesagentur für Arbeit · Bewerbungen werden lokal auf deinem PC geschrieben</div>
+  </footer>
+  <div id="live" class="sr-only" role="status" aria-live="polite"></div>
+
+  <script>
+    // How this page works:
+    //
+    // 1. All data lives in `state` (the same shape as jobs.json) and `ui`
+    //    (selected tab and job, loading flags).
+    // 2. `render()` rebuilds header, tabs, list and detail from that data.
+    // 3. User actions call the server, put the answer into `state` and call
+    //    `render()` again.
+    //
+    // While an email is streaming, only the text node is updated
+    // (`renderStream`), so the page does not flicker on every word.
+
+    const ICON = {
+      sun: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2m-7.1-17.1 1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
+      moon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z"/></svg>',
+      refresh: (cls) => `<svg class="${cls}" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><path d="M21 4v5h-5"/></svg>`,
+      mail: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></svg>',
+      out: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17 17 7"/><path d="M8 7h9v9"/></svg>',
+      check: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>',
+      info: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;margin-top:2px"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>',
+      spark: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v4M12 17v4M3 12h4M17 12h4M6 6l2.5 2.5M15.5 15.5 18 18M18 6l-2.5 2.5M8.5 15.5 6 18"/></svg>',
+    };
+    const TABS = [
+      { key: "new", label: "Offen", empty: "Keine offenen Stellen. Klicke auf „Jobs aktualisieren“." },
+      { key: "applied", label: "Beworben", empty: "Noch nichts als beworben markiert." },
+      { key: "hidden", label: "Ausgeblendet", empty: "Keine ausgeblendeten Stellen." },
+    ];
+    const PROFILE_TAB = "profile";
+    const NOT_MENTIONED_HINT = "Vom Arbeitgeber als Minijob eingestuft, im Anzeigentext aber nicht erwähnt. Vor der Bewerbung prüfen.";
+
+    const $ = (id) => document.getElementById(id);
+    const els = { meta: $("meta"), ollama: $("ollama"), ollamaText: $("ollamaText"), themeBtn: $("themeBtn"),
+                  refreshBtn: $("refreshBtn"), tabs: $("tabs"), onlyMail: $("onlyMail"), onlyMailLabel: $("onlyMailLabel"),
+                  list: $("list"), detail: $("detail"), layout: $("layout"), live: $("live"),
+                  profileForm: $("profileForm"), profileSave: $("profileSave"), profileMsg: $("profileMsg") };
+
+    let state = { jobs: [], generated_at: null, query: {} };
+    let ollama = null;
+    let ui = { tab: "new", sel: null, loading: false, listError: null, animateList: true };
+    const gen = {};   // refnr -> { phase: thinking|streaming|error, text, model, t0, error }
+    const lastRun = {}; // refnr -> { seconds, words } of the last generation in this session
+
+    // Job titles and descriptions come from strangers on the internet. `esc`
+    // replaces characters like < and > before text goes into innerHTML, so a
+    // title such as "<script>..." is shown as text instead of running (XSS).
+    const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    const words = (t) => (t.trim().match(/\S+/g) || []).length;
+    const announce = (msg) => { els.live.textContent = msg; };
+
+    async function api(path, opts) {
+      const res = await fetch(path, opts);
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw Object.assign(new Error(data.error || res.statusText), { status: res.status });
+      return data;
+    }
+    const post = (path, body) => api(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body || {}) });
+    const findJob = (id) => state.jobs.find((j) => j.refnr === id);
+    const upsert = (job) => { const i = state.jobs.findIndex((j) => j.refnr === job.refnr); if (i >= 0) state.jobs[i] = job; };
+
+    function toast(msg) {
+      const t = document.createElement("div");
+      t.className = "toast"; t.setAttribute("role", "status"); t.textContent = msg;
+      document.body.appendChild(t);
+      setTimeout(() => t.remove(), 1800);
+    }
+
+    // --- theme ---------------------------------------------------------------
+    function renderTheme() {
+      const dark = document.documentElement.dataset.theme !== "light";
+      const label = dark ? "Zu hellem Design wechseln" : "Zu dunklem Design wechseln";
+      els.themeBtn.innerHTML = dark ? ICON.sun : ICON.moon;
+      els.themeBtn.setAttribute("aria-label", label);
+      els.themeBtn.title = label;
+    }
+    els.themeBtn.addEventListener("click", () => {
+      const next = document.documentElement.dataset.theme === "light" ? "dark" : "light";
+      document.documentElement.dataset.theme = next;
+      try { localStorage.setItem("mj-theme", next); } catch {}
+      renderTheme();
+    });
+
+    // --- header --------------------------------------------------------------
+    function renderHeader() {
+      const km = (state.query && state.query.umkreis) || "25";
+      let stand = "noch nie aktualisiert";
+      if (state.generated_at) {
+        const d = new Date(state.generated_at.replace(" ", "T"));
+        stand = isNaN(d) ? state.generated_at
+          : "Stand " + d.toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit" }) + " " + d.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" });
+      }
+      els.meta.textContent = `Würzburg · Umkreis ${km} km · ${stand}`;
+      els.refreshBtn.disabled = ui.loading;
+      els.refreshBtn.innerHTML = ICON.refresh(ui.loading ? "spin" : "") + (ui.loading ? "Aktualisiere …" : "Jobs aktualisieren");
+
+      els.ollama.className = "ollama";
+      if (!ollama) { els.ollamaText.textContent = "Prüfe Ollama …"; return; }
+      if (!ollama.up) { els.ollama.classList.add("warn"); els.ollamaText.textContent = "Ollama aus · Vorlage aktiv"; }
+      else if (!ollama.model_installed) { els.ollama.classList.add("warn"); els.ollamaText.textContent = `Modell ${ollama.model} fehlt`; }
+      else { els.ollama.classList.add("ok"); els.ollamaText.textContent = `Ollama bereit · ${ollama.model}`; }
+      els.ollama.title = !ollama.up ? "Starte Ollama mit 'ollama serve', sonst wird die feste Vorlage benutzt."
+        : !ollama.model_installed ? `ollama pull ${ollama.model}` : "Lokales Sprachmodell, kostenlos, keine Daten verlassen den PC.";
+    }
+
+    // --- list ----------------------------------------------------------------
+    function visibleJobs() {
+      return state.jobs.filter((j) => j.status === ui.tab && (!els.onlyMail.checked || j.contact_email));
+    }
+    function selectedJob() {
+      const vis = visibleJobs();
+      return vis.find((j) => j.refnr === ui.sel) || vis[0] || null;
+    }
+
+    function renderTabs() {
+      const counts = { new: 0, applied: 0, hidden: 0 };
+      state.jobs.forEach((j) => { counts[j.status] = (counts[j.status] || 0) + 1; });
+      els.tabs.innerHTML = TABS.map((t) =>
+        `<button type="button" class="tab" data-tab="${t.key}" aria-pressed="${t.key === ui.tab}">${t.label}<span class="count mono">${counts[t.key] || 0}</span></button>`
+      ).join("") +
+        `<button type="button" class="tab separate" data-tab="${PROFILE_TAB}" aria-pressed="${ui.tab === PROFILE_TAB}">Profil</button>`;
+      return counts;
+    }
+
+    function renderList(counts) {
+      if (ui.loading) {
+        const widths = [[78, 52], [64, 40], [85, 58], [58, 46], [72, 36], [68, 50]];
+        els.list.setAttribute("aria-busy", "true");
+        els.list.innerHTML = `<div class="list-note">Hole Stellenangebote von der Arbeitsagentur …</div>` +
+          widths.map(([a, b], i) => `<div class="skel-row pulse" style="animation-delay:${i * 0.12}s" aria-hidden="true">
+              <div class="skel" style="height:14px;width:${a}%"></div><div class="skel" style="height:11px;width:${b}%"></div><div class="skel" style="height:10px;width:30%"></div></div>`).join("");
+        return;
+      }
+      els.list.removeAttribute("aria-busy");
+      if (ui.listError) {
+        els.list.innerHTML = `<div class="empty" style="color:var(--danger)">${esc(ui.listError)}</div>`;
+        return;
+      }
+      const vis = visibleJobs();
+      const sel = selectedJob();
+      if (!vis.length) {
+        const t = TABS.find((x) => x.key === ui.tab);
+        const msg = els.onlyMail.checked && counts[ui.tab] ? "Keine Stelle mit E-Mail-Kontakt in dieser Liste." : t.empty;
+        els.list.innerHTML = `<div class="empty">${esc(msg)}</div>`;
+        return;
+      }
+      els.list.innerHTML = vis.map((j, i) => `
+        <button type="button" class="row${ui.animateList ? " reveal" : ""}" data-id="${esc(j.refnr)}" aria-current="${sel && j.refnr === sel.refnr}" style="animation-delay:${Math.min(i, 12) * 0.04}s">
+          <span class="row-text">
+            <span class="row-title">${esc(j.display_title || j.title)}</span>
+            <span class="row-company">${esc(j.company)}</span>
+            <span class="row-loc mono">${esc(j.location)}</span>
+          </span>
+          <span class="row-chips">
+            ${j.contact_email ? `<span class="chip mail">${ICON.mail}E-Mail</span>` : ""}
+            ${j.minijob_mentioned === false ? `<span class="chip warn" title="${esc(NOT_MENTIONED_HINT)}">Minijob nicht erwähnt</span>` : ""}
+          </span>
+        </button>`).join("");
+      ui.animateList = false;
+    }
+
+    // --- detail --------------------------------------------------------------
+    function gmailUrl(job) {
+      const q = (k, v) => `${k}=${encodeURIComponent(v || "")}`;
+      return "https://mail.google.com/mail/?" + [q("view", "cm"), q("fs", "1"), q("to", job.contact_email),
+        q("su", job.application_subject), q("body", job.application_email)].join("&");
+    }
+
+    function statusChip(job) {
+      if (job.status === "applied") return `<span class="chip info">Beworben</span>`;
+      if (job.status === "hidden") return `<span class="chip neutral">Ausgeblendet</span>`;
+      return `<span class="chip mail">Offen</span>`;
+    }
+
+    function mailStatusText(job, g) {
+      if (g && g.phase === "thinking") return `${esc(g.model || "Modell")} · lädt …`;
+      if (g && g.phase === "streaming") return `${esc(g.model || "Modell")} · ${words(g.text)} Wörter …`;
+      if (!job.application_email) return "Noch nicht generiert";
+      const run = lastRun[job.refnr];
+      if (run) return `Fertig in ${run.seconds.toFixed(1).replace(".", ",")} s · ${run.words} Wörter · lokal`;
+      return `${words(job.application_email)} Wörter`;
+    }
+
+    function mailBodyHtml(job, g) {
+      if (g && g.phase === "thinking") {
+        return `<div class="thinking"><div class="thinking-label"><span class="dots" aria-hidden="true"><span></span><span></span><span></span></span>Modell liest die Stellenanzeige …</div>
+          <div class="skel-lines pulse" aria-hidden="true">${[42, 96, 88, 93, 61, 0, 90, 74].map((w) => w ? `<div class="skel" style="width:${w}%"></div>` : `<div style="height:6px"></div>`).join("")}</div></div>`;
+      }
+      if (g && g.phase === "streaming") {
+        return `<div class="mail-body streaming" id="mailBody">${esc(g.text)}<span class="caret" aria-hidden="true"></span></div>`;
+      }
+      if (g && g.phase === "error") {
+        return `<div class="error">${esc(g.error)}</div><div class="mail-foot"><span></span><button type="button" class="btn small" data-action="generate" data-force="1">Nochmal versuchen</button></div>`;
+      }
+      if (!job.application_email) {
+        return `<div class="mail-idle"><p>Noch keine Bewerbung für diese Stelle. Das Modell liest die Anzeige und schreibt eine passende E-Mail, direkt auf deinem PC.</p>
+          <button type="button" class="btn primary big" data-action="generate">${ICON.spark}E-Mail generieren</button></div>`;
+      }
+      const source = job.email_source === "template"
+        ? `<span class="chip warn mono">Vorlage</span><span class="note">${esc(job.email_note || "Ollama war nicht erreichbar.")}</span>`
+        : `<span class="chip info mono">KI-Entwurf${ollama && ollama.model ? " · " + esc(ollama.model) : ""}</span><span class="note">Vor dem Absenden einmal durchlesen.</span>`;
+      return `<div class="mail-body${lastRun[job.refnr] && lastRun[job.refnr].fresh ? " reveal" : ""}">${esc(job.application_email)}</div>
+        <div class="mail-foot"><span style="display:flex;flex-wrap:wrap;align-items:center;gap:8px">${source}</span>
+          <span style="display:flex;gap:8px"><button type="button" class="btn small" data-action="copy">Kopieren</button>
+          <button type="button" class="btn small" data-action="generate" data-force="1">Neu schreiben</button></span></div>`;
+    }
+
+    function renderDetail() {
+      const job = ui.loading ? null : selectedJob();
+      els.detail.classList.toggle("dim", ui.loading);
+      if (!job) {
+        els.detail.style.display = ui.loading && els.detail.innerHTML ? "" : "none";
+        return;
+      }
+      els.detail.style.display = "";
+      const g = gen[job.refnr];
+      const busy = g && (g.phase === "thinking" || g.phase === "streaming");
+      const hasMail = !!job.contact_email;
+      const actions = [
+        hasMail && job.application_email && !busy ? `<a class="btn primary" href="${esc(gmailUrl(job))}" target="_blank" rel="noopener">${ICON.mail}In Gmail öffnen</a>` : "",
+        job.application_url ? `<a class="btn" href="${esc(job.application_url)}" target="_blank" rel="noopener">Zur Anzeige${ICON.out}</a>` : "",
+        job.status === "new"
+          ? `<button type="button" class="btn" data-action="status" data-status="applied">${ICON.check}Als beworben markieren</button>
+             <button type="button" class="btn ghost" data-action="status" data-status="hidden">Ausblenden</button>`
+          : `<button type="button" class="btn" data-action="status" data-status="new">Wieder öffnen</button>`,
+      ].join("");
+
+      els.detail.innerHTML = `
+        <div class="d-head">
+          <div class="d-meta"><span class="mono">Ref. ${esc(job.refnr)}</span>${statusChip(job)}${job.minijob_mentioned === false ? `<span class="chip warn" title="${esc(NOT_MENTIONED_HINT)}">Minijob nicht erwähnt</span>` : ""}</div>
+          <h2 title="${esc(job.title)}">${esc(job.display_title || job.title)}</h2>
+          <div class="d-sub">${esc(job.company)} · ${esc(job.location)}</div>
+        </div>
+        <div class="actions">${actions}</div>
+        ${hasMail ? "" : `<div class="notice">${ICON.info}<span>Keine E-Mail-Adresse in der Anzeige. Bewerbung über das Formular der Anzeige, den Text unten kannst du dort einfügen.</span></div>`}
+        <div class="mailbox">
+          <div class="mail-head">
+            <div class="mail-head-text">
+              ${hasMail ? `<span>An <span class="mono" style="color:var(--text)">${esc(job.contact_email)}</span></span>` : ""}
+              <span>Betreff <strong>${esc(job.application_subject)}</strong></span>
+            </div>
+            <span class="mail-status mono" id="mailStatus">${mailStatusText(job, g)}</span>
+            ${busy ? `<div class="progress" aria-hidden="true"><div></div></div>` : ""}
+          </div>
+          ${mailBodyHtml(job, g)}
+        </div>`;
+      if (lastRun[job.refnr]) lastRun[job.refnr].fresh = false;
+    }
+
+    function render() {
+      renderHeader();
+      const counts = renderTabs();
+      const showProfile = ui.tab === PROFILE_TAB;
+      els.layout.hidden = showProfile;
+      els.onlyMailLabel.hidden = showProfile;
+      els.profileForm.hidden = !showProfile;
+      if (showProfile) return;
+      renderList(counts);
+      renderDetail();
+    }
+
+    // During streaming only the text and the counter change: update those two
+    // nodes instead of re-rendering the page (keeps the caret and the scroll).
+    function renderStream(id) {
+      const job = selectedJob();
+      if (!job || job.refnr !== id) return;
+      const body = document.getElementById("mailBody");
+      const status = document.getElementById("mailStatus");
+      if (!body) { renderDetail(); return; }
+      body.innerHTML = esc(gen[id].text) + '<span class="caret" aria-hidden="true"></span>';
+      if (status) status.innerHTML = mailStatusText(job, gen[id]);
+    }
+
+    // --- actions -------------------------------------------------------------
+    async function generate(id, force) {
+      const job = findJob(id);
+      if (!job || (gen[id] && gen[id].phase !== "error")) return;
+      gen[id] = { phase: "thinking", text: "", model: ollama && ollama.model, t0: performance.now() };
+      render();
+      announce("Bewerbung wird geschrieben.");
+      try {
+        const res = await fetch(`/api/jobs/${encodeURIComponent(id)}/email/stream`, {
+          method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ force: !!force }),
+        });
+        if (res.status === 404 || res.status === 405) {
+          // Backend without streaming: fall back to the classic endpoint.
+          finish(id, await post(`/api/jobs/${encodeURIComponent(id)}/email`, { force: !!force }));
+          return;
+        }
+        if (!res.ok || !res.body) throw new Error((await res.json().catch(() => ({}))).error || res.statusText);
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let buffer = "", done = null;
+        for (;;) {
+          const { value, done: end } = await reader.read();
+          if (end) break;
+          buffer += decoder.decode(value, { stream: true });
+          let nl;
+          while ((nl = buffer.indexOf("\n")) >= 0) {
+            const line = buffer.slice(0, nl).trim();
+            buffer = buffer.slice(nl + 1);
+            if (!line) continue;
+            const ev = JSON.parse(line);
+            if (ev.type === "start") { gen[id].model = ev.model; renderStream(id); }
+            else if (ev.type === "token") {
+              const first = gen[id].phase === "thinking";
+              gen[id].phase = "streaming";
+              gen[id].text += ev.text;
+              first ? renderDetail() : renderStream(id);
+            } else if (ev.type === "done") done = ev.job;
+          }
+        }
+        if (!done) throw new Error("Verbindung abgebrochen, bevor die E-Mail fertig war.");
+        finish(id, done);
+      } catch (e) {
+        gen[id] = { phase: "error", error: "Fehler: " + e.message };
+        render();
+      }
+    }
+
+    function finish(id, job) {
+      const g = gen[id];
+      delete gen[id];
+      upsert(job);
+      lastRun[id] = { seconds: (performance.now() - g.t0) / 1000, words: words(job.application_email), fresh: true };
+      render();
+      announce(job.email_source === "template" ? "Vorlage eingefügt." : "Bewerbung fertig.");
+    }
+
+    async function setStatus(id, status) {
+      try {
+        upsert(await post(`/api/jobs/${encodeURIComponent(id)}/status`, { status }));
+        const labels = { applied: "Als beworben markiert", hidden: "Ausgeblendet", new: "Wieder geöffnet" };
+        toast(labels[status] || "Gespeichert");
+        render();
+      } catch (e) { toast("Fehler: " + e.message); }
+    }
+
+    async function copy(id) {
+      const job = findJob(id);
+      try { await navigator.clipboard.writeText(job.application_email); toast("E-Mail kopiert"); }
+      catch { toast("Kopieren nicht möglich"); }
+    }
+
+    async function refreshJobs() {
+      if (ui.loading) return;
+      ui.loading = true; ui.listError = null;
+      render();
+      try {
+        state = await api("/api/refresh", { method: "POST" });
+        const n = state.jobs.filter((j) => j.status === "new").length;
+        announce(`${n} offene Stellen geladen.`);
+      } catch (e) {
+        ui.listError = "Aktualisierung fehlgeschlagen: " + e.message;
+      } finally {
+        ui.loading = false; ui.animateList = true;
+        render();
+      }
+    }
+
+    // --- profile -------------------------------------------------------------
+    function showProfileMessage(text, kind) {
+      els.profileMsg.textContent = text;
+      els.profileMsg.className = "profile-msg" + (kind ? " " + kind : "");
+    }
+
+    function fillProfile(profile) {
+      for (const [key, value] of Object.entries(profile)) {
+        const field = els.profileForm.elements.namedItem(key);
+        if (field) field.value = value;
+      }
+    }
+
+    async function loadProfile() {
+      try {
+        const profile = await api("/api/profile");
+        fillProfile(profile);
+        if (!profile.name) showProfileMessage("Trage deinen Namen ein, bevor du E-Mails schreiben lässt.", "error");
+      } catch (e) {
+        showProfileMessage("Profil konnte nicht geladen werden: " + e.message, "error");
+      }
+    }
+
+    // preventDefault stops the browser's normal form submit (which would
+    // reload the page); the data is sent as JSON instead.
+    els.profileForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const data = Object.fromEntries(new FormData(els.profileForm));
+      if (!data.name.trim()) {
+        showProfileMessage("Bitte gib deinen Namen an.", "error");
+        els.profileForm.elements.namedItem("name").focus();
+        return;
+      }
+      els.profileSave.disabled = true;
+      try {
+        fillProfile(await api("/api/profile", {
+          method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(data),
+        }));
+        showProfileMessage("Gespeichert ✓ Neue E-Mails verwenden das Profil, bestehende ändern sich mit „Neu schreiben“.", "ok");
+        toast("Profil gespeichert");
+      } catch (err) {
+        showProfileMessage("Fehler: " + err.message, "error");
+      } finally {
+        els.profileSave.disabled = false;
+      }
+    });
+    els.profileForm.addEventListener("input", () => showProfileMessage(""));
+
+    // --- events --------------------------------------------------------------
+    // Event delegation: one listener per container checks which button inside
+    // it was clicked (via data-* attributes), because the buttons themselves
+    // are re-created on every render.
+    els.refreshBtn.addEventListener("click", refreshJobs);
+    // The title returns to the start view without a real reload, which would
+    // cancel an email that is still being generated. Ctrl/middle click still
+    // follow the link and open a new tab.
+    $("homeLink").addEventListener("click", (e) => {
+      if (e.ctrlKey || e.metaKey || e.shiftKey) return;
+      e.preventDefault();
+      ui.tab = "new"; ui.sel = null; ui.animateList = true;
+      els.onlyMail.checked = false;
+      render();
+      els.detail.scrollTop = 0;
+      window.scrollTo(0, 0);
+    });
+    els.onlyMail.addEventListener("change", () => { ui.animateList = true; render(); });
+    els.tabs.addEventListener("click", (e) => {
+      const b = e.target.closest("[data-tab]");
+      if (!b) return;
+      ui.tab = b.dataset.tab; ui.animateList = true; render();
+    });
+    els.list.addEventListener("click", (e) => {
+      const b = e.target.closest(".row");
+      if (!b) return;
+      ui.sel = b.dataset.id; render();
+      els.detail.scrollTop = 0;
+    });
+    els.detail.addEventListener("click", (e) => {
+      const b = e.target.closest("[data-action]");
+      const job = selectedJob();
+      if (!b || !job) return;
+      if (b.dataset.action === "generate") generate(job.refnr, b.dataset.force === "1");
+      if (b.dataset.action === "status") setStatus(job.refnr, b.dataset.status);
+      if (b.dataset.action === "copy") copy(job.refnr);
+    });
+
+    // Runs once when the page opens: theme, profile, jobs, Ollama status.
+    async function init() {
+      renderTheme();
+      render();
+      loadProfile();
+      try { state = await api("/api/jobs"); }
+      catch (e) { ui.listError = "Konnte Jobs nicht laden: " + e.message; }
+      render();
+      try { ollama = await api("/api/ollama"); } catch { ollama = { up: false, model: "?" }; }
+      renderHeader();
+    }
+    init();
+  </script>
+</body>
+</html>
