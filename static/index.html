@@ -188,11 +188,21 @@
     footer { border-top: 1px solid var(--border); font-size: 13px; color: var(--subtle); }
     footer .wrap { padding-block: 16px; }
 
-    /* Wide screens: header and job details stay in view while the list scrolls.
+    /* Wide screens: the job details stay in view while the list scrolls, and
+       the email buttons stay at the bottom of the panel. overflow: clip keeps
+       the rounded corners; overflow: hidden would stop the footer sticking. */
+    @media (min-width: 900px) {
+      .layout { flex-wrap: nowrap; }
+      .detail { position: sticky; top: 16px; max-height: calc(100vh - 32px); overflow-y: auto; }
+      .mailbox { overflow: clip; }
+      /* -28px cancels the panel's padding, otherwise text shows below the footer. */
+      .mail-foot { position: sticky; bottom: -28px; z-index: 1; }
+    }
+    /* The header is sticky here too, so the panel has to sit below it.
        --header-h is kept up to date by a script, as the header can wrap. */
     @media (min-width: 1000px) {
       header { position: sticky; top: 0; z-index: 20; }
-      .detail { position: sticky; top: calc(var(--header-h, 85px) + 20px); max-height: calc(100vh - var(--header-h, 85px) - 40px); overflow-y: auto; }
+      .detail { top: calc(var(--header-h, 85px) + 16px); max-height: calc(100vh - var(--header-h, 85px) - 32px); }
     }
     @media (max-width: 560px) {
       .wrap { padding-inline: 16px; }
@@ -485,7 +495,8 @@
         : `<span class="chip info mono">KI-Entwurf${ollama && ollama.model ? " · " + esc(ollama.model) : ""}</span><span class="note">Vor dem Absenden einmal durchlesen.</span>`;
       return `<div class="mail-body${lastRun[job.refnr] && lastRun[job.refnr].fresh ? " reveal" : ""}">${esc(job.application_email)}</div>
         <div class="mail-foot"><span style="display:flex;flex-wrap:wrap;align-items:center;gap:8px">${source}</span>
-          <span style="display:flex;gap:8px"><button type="button" class="btn small" data-action="copy">Kopieren</button>
+          <span style="display:flex;flex-wrap:wrap;gap:8px">${job.contact_email ? `<a class="btn small primary" href="${esc(gmailUrl(job))}" target="_blank" rel="noopener">${ICON.mail}In Gmail öffnen</a>` : ""}
+          <button type="button" class="btn small" data-action="copy">Kopieren</button>
           <button type="button" class="btn small" data-action="generate" data-force="1">Neu schreiben</button></span></div>`;
     }
 
@@ -501,7 +512,6 @@
       const busy = g && (g.phase === "thinking" || g.phase === "streaming");
       const hasMail = !!job.contact_email;
       const actions = [
-        hasMail && job.application_email && !busy ? `<a class="btn primary" href="${esc(gmailUrl(job))}" target="_blank" rel="noopener">${ICON.mail}In Gmail öffnen</a>` : "",
         job.application_url ? `<a class="btn" href="${esc(job.application_url)}" target="_blank" rel="noopener">Zur Anzeige${ICON.out}</a>` : "",
         job.status === "new"
           ? `<button type="button" class="btn" data-action="status" data-status="applied">${ICON.check}Als beworben markieren</button>
