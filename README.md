@@ -1,8 +1,11 @@
 # Minijob Finder
 
-A small local app that finds Minijobs around Würzburg on the German
-Bundesagentur für Arbeit job board, writes a short German application email
-for each job you open, and lets you track what you already applied to.
+![Minijob Finder writing an application email live](docs/screenshot.png)
+
+A small local app that finds Minijobs around a city or ZIP code of your choice
+on the German Bundesagentur für Arbeit job board, writes a short German
+application email for each job you open, and lets you track what you already
+applied to.
 
 Everything runs on your PC and is free: emails come from a local
 [Ollama](https://ollama.com) model, and if Ollama is not running a fixed
@@ -18,6 +21,9 @@ minijob/
 ├── emails.py           # Application emails via Ollama, template fallback
 ├── store.py            # jobs.json and profile.json: load, save, job status
 ├── HOW_IT_WORKS.md     # How the parts work together, for learning
+├── LICENSE             # MIT
+├── start.bat           # Windows: set up on first start, then run the app
+├── docs/               # Screenshots for this README
 ├── requirements.txt
 ├── requirements-dev.txt # pytest, for the tests
 ├── tests/              # pytest suite, no network or Ollama needed
@@ -46,6 +52,12 @@ Without Ollama everything still works, you just get the template email.
 
 ## Run
 
+The easiest way on Windows is to double-click `start.bat`. It needs Python, and
+on the first start it does the Python setup above for you. It also starts Ollama
+if it is installed and opens the browser. Closing its window stops the app.
+
+Or start it by hand after the setup above:
+
 ```powershell
 python app.py
 ```
@@ -54,6 +66,10 @@ Open <http://127.0.0.1:5000>.
 
 ## Using the dashboard
 
+- Enter a city or ZIP code and pick a radius (5 to 100 km) in the header. The
+  default is Würzburg, 25 km, and your last search is remembered in `jobs.json`.
+  A new search removes jobs that are no longer in the results, including their
+  emails and hidden status. Only applied jobs always stay.
 - **Jobs aktualisieren** fetches the current listings. It only takes a few
   seconds because known jobs are not fetched or rewritten again.
 - Click a job in the list to see its details on the right.
@@ -74,6 +90,13 @@ Open <http://127.0.0.1:5000>.
 
 Run without the browser: `python minijob.py` (refresh only) or
 `python minijob.py --emails` (refresh and write all missing emails).
+
+## Screenshots
+
+![Job details](docs/screenshot-details.png)
+![Profile form](docs/screenshot-profile.png)
+![Applied jobs](docs/screenshot-applied.png)
+![Hidden jobs](docs/screenshot-hidden.png)
 
 ## Tests
 
@@ -106,8 +129,9 @@ and falls back to the classic one if the server has no stream endpoint.
 - The writing rules for the model are in `_PROMPT`, the fallback text in
   `build_template_email()`, both in `emails.py`. The profile defaults are
   `DEFAULT_PROFILE` in `store.py`.
-- Search settings (city, radius, pages) are `SEARCH_PARAMS` and `MAX_PAGES`
-  in `jobboard.py`.
+- City and radius are chosen in the dashboard. Their defaults
+  (`DEFAULT_LOCATION`, `DEFAULT_RADIUS`) and the other search settings
+  (`SEARCH_PARAMS`, `MAX_PAGES`) are in `jobboard.py`.
 - Listings are skipped by title: `QUALIFICATION_KEYWORDS` in `jobboard.py`
   (Erzieher, Therapeut, Krankenpfleger …) always, `ENROLLMENT_KEYWORDS`
   (Student, Werkstudent …) unless the title also says Minijob or Aushilfe.

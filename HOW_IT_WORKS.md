@@ -52,7 +52,7 @@ instantly.
 
 ```
 index.html          app.py              minijob.refresh_jobs()
-refreshJobs() ───► POST /api/refresh ─► 1. jobboard.search()         ─► API: search, 2 pages
+refreshJobs() ───► POST /api/refresh ─► 1. jobboard.search()         ─► API: search, MAX_PAGES = 4
                                         2. jobboard.is_excluded()       drop unsuitable titles
                                         3. store.load_state()           which jobs are known?
                                         4. jobboard.with_details()   ─► API: one request per NEW job
@@ -63,7 +63,7 @@ render()
 ```
 
 The important trick is step 3 and 4: details are only loaded for jobs that
-are not in `jobs.json` yet. The first refresh makes ~90 detail requests,
+are not in `jobs.json` yet. The first refresh makes up to 200 detail requests,
 every later one only a handful. That is a simple form of *caching*.
 
 The merge in step 5 keeps your work: a job you marked "Beworben" stays even
@@ -171,8 +171,8 @@ Where to find each one in the code:
 
 Small changes that are good for learning how the pieces connect:
 
-1. **Another city.** Change `"wo"` in `SEARCH_PARAMS` (`jobboard.py`), run
-   `python minijob.py` and look at `jobs.json`.
+1. **Another city.** Enter a city or ZIP code and pick a radius in the dashboard
+   header, click "Jobs aktualisieren" and look at `query` in `jobs.json`.
 2. **Watch the API.** Open `https://rest.arbeitsagentur.de/jobboerse/jobsuche-service/pc/v6/jobs?wo=Würzburg&arbeitszeit=mj`
    in a tool like Postman or `curl` with the header `X-API-Key: jobboerse-jobsuche`
    and compare the fields with `_to_listing`.
