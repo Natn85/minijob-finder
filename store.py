@@ -40,13 +40,14 @@ OUTPUT_FILE = Path(__file__).with_name("jobs.json")
 PROFILE_FILE = Path(__file__).with_name("profile.json")
 STATUSES = ("new", "applied", "hidden")
 
-# Used until a profile is saved, and for fields missing in profile.json.
+# Used until a profile is saved, and for fields missing in profile.json. Empty
+# on purpose: without a name, ``minijob.require_profile`` blocks writing emails.
 DEFAULT_PROFILE = {
-    "name": "Max Testmann",
-    "city": "Würzburg",
-    "occupation": "eine Ausbildung",
-    "skills": "Kasse, Lager",
-    "availability": "neben der Ausbildung flexibel",
+    "name": "",
+    "city": "",
+    "occupation": "",
+    "skills": "",
+    "availability": "",
     "about": "",
 }
 MAX_PROFILE_FIELD_LENGTH = 1000

@@ -233,6 +233,13 @@ def test_api_stream_needs_a_name(client, one_job, isolated_state):
     assert resp.status_code == 400 and "Namen" in resp.get_json()["error"]
 
 
+def test_new_install_has_empty_profile_and_needs_a_name(client, one_job, isolated_state):
+    store.PROFILE_FILE.unlink()
+    assert not any(client.get("/api/profile").get_json().values())
+    resp = client.post(f"/api/jobs/{one_job}/email/stream", json={})
+    assert resp.status_code == 400 and "Namen" in resp.get_json()["error"]
+
+
 def test_api_profile_roundtrip_and_validation(client):
     assert client.get("/api/profile").get_json()["name"] == "Max Testmann"
     saved = client.put("/api/profile", json={"name": " Lena ", "skills": "Kasse", "extra": "ignored"}).get_json()

@@ -27,6 +27,7 @@ def isolated_state(tmp_path, monkeypatch):
     """
     monkeypatch.setattr(store, "OUTPUT_FILE", tmp_path / "jobs.json")
     monkeypatch.setattr(store, "PROFILE_FILE", tmp_path / "profile.json")
+    store.save_profile({"name": "Max Testmann", "city": "Würzburg"})
 
     def no_network(*args, **kwargs):
         raise requests.ConnectionError("network disabled in tests")
