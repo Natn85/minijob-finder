@@ -9,3 +9,4 @@ venv/
 profile.json
 profile.json.tmp
 .pytest_cache/
+.vscode/
